@@ -7,6 +7,5 @@
         public ICollection<User> Users { get; set; } = new List<User>();
         public ICollection<BranchTable> Tables { get; set; } = new List<BranchTable>();
         public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
-
     }
 }

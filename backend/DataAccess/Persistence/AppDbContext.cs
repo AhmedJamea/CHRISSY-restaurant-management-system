@@ -15,6 +15,8 @@ namespace DataAccess.Persistence
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<Extra> Extras { get; set; }
         public DbSet<MenuItemExtra> MenuItemExtras { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -172,6 +174,8 @@ namespace DataAccess.Persistence
                       .HasForeignKey(me => me.ExtraId)
                       .OnDelete(DeleteBehavior.Cascade); // If an Extra is globally deleted, remove it from all menus
             });
+
+
         }
     }
 }
