@@ -35,7 +35,7 @@ namespace DataAccess.Persistence
 
                 entity.Property(u => u.Role)
                       .IsRequired()
-                    // Store the Enum as a readable string in the database
+                      // Store the Enum as a readable string in the database
                       .HasConversion<string>();
 
                 entity.HasOne(u => u.Branch)
@@ -175,7 +175,63 @@ namespace DataAccess.Persistence
                       .OnDelete(DeleteBehavior.Cascade); // If an Extra is globally deleted, remove it from all menus
             });
 
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(o => o.Id);
 
+                entity.Property(o => o.Type)
+                      .IsRequired()
+                      .HasConversion<string>();
+
+                entity.Property(o => o.Destination)
+                      .HasConversion<string>();
+
+                entity.Property(o => o.Status)
+                      .IsRequired()
+                      .HasConversion<string>();
+
+                entity.HasOne(o => o.Branch)
+                      .WithMany()
+                      .HasForeignKey(o => o.BranchId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.BranchTable)
+                      .WithMany()
+                      .HasForeignKey(o => new { o.BranchId, o.TableNumber })
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // This creates a unique index on the table, but ONLY for orders with the status 'Open'
+                entity.HasIndex(o => new { o.BranchId, o.TableNumber })
+                      .IsUnique()
+                      .HasFilter("[Status] = 'Open' AND [TableNumber] IS NOT NULL")
+                      .HasDatabaseName("IX_Order_ActiveTableOrder");
+            });
+
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasKey(oi => oi.Id);
+
+                entity.Property(oi => oi.ItemPrice)
+                      .IsRequired()
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oi => oi.SubTotal)
+                      .IsRequired()
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oi => oi.Quantity)
+                      .IsRequired();
+
+                entity.HasOne(oi => oi.Order)
+                      .WithMany(o => o.OrderItems)
+                      .HasForeignKey(oi => oi.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(oi => oi.MenuItem)
+                      .WithMany()
+                      .HasForeignKey(oi => oi.MenuItemId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }
