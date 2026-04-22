@@ -10,5 +10,6 @@
         public decimal SubTotal { get; set; }
         public Order Order { get; set; }
         public MenuItem MenuItem { get; set; }
+        public ICollection<OrderItemExtra> OrderItemExtras { get; set; } = new List<OrderItemExtra>();
     }
 }

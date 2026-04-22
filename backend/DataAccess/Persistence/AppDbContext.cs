@@ -17,6 +17,7 @@ namespace DataAccess.Persistence
         public DbSet<MenuItemExtra> MenuItemExtras { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<OrderItemExtra> OrderItemExtras { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -231,6 +232,32 @@ namespace DataAccess.Persistence
                       .WithMany()
                       .HasForeignKey(oi => oi.MenuItemId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<OrderItemExtra>(entity =>
+            {
+                entity.HasKey(oie => oie.Id);
+
+                entity.Property(oie => oie.ExtraPrice)
+                      .IsRequired()
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oie => oie.SubTotal)
+                      .IsRequired()
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oie => oie.Quantity)
+                      .IsRequired();
+
+                entity.HasOne(oie => oie.OrderItem)
+                      .WithMany(oi => oi.OrderItemExtras)
+                      .HasForeignKey(oie => oie.OrderItemId)
+                      .OnDelete(DeleteBehavior.Cascade); 
+
+                entity.HasOne(oie => oie.Extra)
+                      .WithMany() 
+                      .HasForeignKey(oie => oie.ExtraId)
+                      .OnDelete(DeleteBehavior.Restrict); 
             });
         }
     }
