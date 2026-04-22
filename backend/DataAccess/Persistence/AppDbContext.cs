@@ -18,6 +18,8 @@ namespace DataAccess.Persistence
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<OrderItemExtra> OrderItemExtras { get; set; }
+        public DbSet<OrderTransaction> OrderTransactions { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -258,6 +260,57 @@ namespace DataAccess.Persistence
                       .WithMany() 
                       .HasForeignKey(oie => oie.ExtraId)
                       .OnDelete(DeleteBehavior.Restrict); 
+            });
+
+            modelBuilder.Entity<OrderTransaction>(entity =>
+            {
+                entity.HasKey(ot => ot.Id);
+
+                entity.Property(ot => ot.TransactionType)
+                      .IsRequired()
+                      .HasConversion<string>();
+
+                entity.Property(ot => ot.Timestamp)
+                      .IsRequired()
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasOne(ot => ot.Order)
+                      .WithMany(o => o.OrderTransactions)
+                      .HasForeignKey(ot => ot.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ot => ot.User)
+                      .WithMany()
+                      .HasForeignKey(ot => ot.CashierId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+
+                entity.Property(p => p.Method)
+                      .IsRequired()
+                      .HasConversion<string>();
+
+                entity.Property(p => p.Amount)
+                      .IsRequired()
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(p => p.Timestamp)
+                      .IsRequired()
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasOne(p => p.Order)
+                      .WithOne(o => o.Payment)
+                      .HasForeignKey<Payment>(p => p.OrderId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.Cashier)
+                      .WithMany()
+                      .HasForeignKey(p => p.CashierId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

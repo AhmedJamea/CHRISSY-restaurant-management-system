@@ -13,5 +13,7 @@ namespace Models.Entites
         public Branch Branch { get; set; }
         public BranchTable? BranchTable { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public ICollection<OrderTransaction> OrderTransactions { get; set; } = new List<OrderTransaction>();
+        public Payment? Payment { get; set; }
     }
 }
