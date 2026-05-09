@@ -109,7 +109,13 @@ namespace BusinessLogic.Services
             {
                 claims.Add(new Claim("BranchId", user.BranchId.Value.ToString()));
             }
-            
+
+            // Add the roles to the token
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             // 2. Get the Secret Key from appsettings.json
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
