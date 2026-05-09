@@ -1,7 +1,0 @@
-$kind: collection
-name: CHRISSY Auth
-variables:
-  - key: baseUrl
-    value: 'http://localhost:5287'
-  - key: authToken
-    value: ''

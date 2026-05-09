@@ -1,6 +1,7 @@
 using Business.Services;
 using BusinessLogic.Services;
 using DataAccess.Persistence;
+using DataAccess.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -56,5 +57,21 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Call the seed method
+        await DbInitializer.SeedAsync(services);
+    }
+    catch (Exception ex)
+    {
+        // Log errors if seeding fails
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 app.Run();
