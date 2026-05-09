@@ -1,4 +1,5 @@
 ﻿using Business.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models.DTOs.Auth;
 
@@ -31,5 +32,20 @@ namespace Presentation.API.Controllers
             // 3. Otherwise, return the DTO with the JWT token
             return Ok(result);
         }
+
+        [HttpPost("register")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> register([FromBody] RegisterRequestDto RegisterRequest)
+        {
+            var result = await _authService.RegisterAsync(RegisterRequest);
+
+            if (result == false)
+            {
+                return BadRequest(new { message = "Registration failed. Please check user details or branch assignment." });
+            }
+
+            return Ok(new { message = "User created successfully." });
+        }
+
     }
 }

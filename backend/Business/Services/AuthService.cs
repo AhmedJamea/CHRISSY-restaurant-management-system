@@ -61,6 +61,39 @@ namespace BusinessLogic.Services
             };
         }
 
+        public async Task<bool> RegisterAsync(RegisterRequestDto request)
+        {
+            if (request.Role.Equals("Cashier", StringComparison.OrdinalIgnoreCase) && !request.BranchId.HasValue)
+            {
+                return false;
+            }
+
+            var user = new User
+            {
+                UserName = request.Username,
+                Name = request.Name,
+                // Admin may have no branch assignment
+                BranchId = request.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : request.BranchId
+            };
+
+            // Create the User in the AspNetUsers table
+            var result = await _userManager.CreateAsync(user, request.Password);
+
+            if (result.Succeeded)
+            {
+                var roleResult = await _userManager.AddToRoleAsync(user, request.Role);
+
+                if (!roleResult.Succeeded)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         private string GenerateJwtToken(User user, IList<string> roles)
         {
             // 1.Create the Claims(The data embedded inside the token)
@@ -93,5 +126,6 @@ namespace BusinessLogic.Services
             // 4. Serialize to a string
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
     }
 }
