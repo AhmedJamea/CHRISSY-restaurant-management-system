@@ -1,4 +1,5 @@
 ﻿using Models.DTOs.Auth;
+using Models.Entites;
 
 namespace Business.Services
 {
@@ -6,5 +7,6 @@ namespace Business.Services
     {
         Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
         Task RegisterAsync(RegisterRequestDto request);
+        Task<AuthResponseDto> LoginExternalAsync(string email);
     }
 }

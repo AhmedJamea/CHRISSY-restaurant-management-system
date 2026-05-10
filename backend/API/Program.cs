@@ -42,6 +42,15 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
+})
+.AddGoogle(options =>
+{
+    // Pull credentials from appsettings.json
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+    // CRITICAL: Tells Identity to handle the Google user as an "External Login"
+    options.SignInScheme = IdentityConstants.ExternalScheme;
 });
 
 builder.Services.AddScoped<IAuthService, AuthService>();

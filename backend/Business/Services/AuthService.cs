@@ -23,7 +23,7 @@ namespace BusinessLogic.Services
 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            // 1. Find the user by username
+            // 1. Find the user by Email
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
@@ -101,6 +101,38 @@ namespace BusinessLogic.Services
             }
         }
 
+        public async Task<AuthResponseDto> LoginExternalAsync(string email)
+        {
+            // 1. Find the user by Email
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("Invalid email or password");
+            }
+
+            // 2. Get the roles for this specific user from the database
+            var roles = await _userManager.GetRolesAsync(user);
+            var primaryRole = roles.FirstOrDefault() ?? "None";
+
+            // 4. Check if cashier is assigned to a branch
+            if (primaryRole.Equals("Cashier", StringComparison.OrdinalIgnoreCase) && user.BranchId == null)
+            {
+                throw new InvalidOperationException("Account configuration error: No branch assigned.");
+            }
+
+            // Reuse your GenerateJwtToken method
+            var token = GenerateJwtToken(user, roles);
+
+            return new AuthResponseDto
+            {
+                Token = token,
+                UserId = user.Id,
+                Name = user.Name,
+                Role = primaryRole,
+                BranchId = user.BranchId
+            };
+        }
+
         private string GenerateJwtToken(User user, IList<string> roles)
         {
             // 1.Create the Claims(The data embedded inside the token)
@@ -140,6 +172,5 @@ namespace BusinessLogic.Services
             // 4. Serialize to a string
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
     }
 }
