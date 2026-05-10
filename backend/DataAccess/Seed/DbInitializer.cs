@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Models.Entites;
 using Models.Enums;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DataAccess.Seed
 {
@@ -31,7 +28,7 @@ namespace DataAccess.Seed
             }
 
             // 2. Seed Master Admin User
-            const string adminUsername = "master_admin";
+            const string adminUsername = "admin@restaurant.com";
             // Check if the admin already exists to avoid duplicates
             var existingAdmin = await userManager.FindByNameAsync(adminUsername);
 

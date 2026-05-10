@@ -24,29 +24,20 @@ namespace BusinessLogic.Services
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
             // 1. find the user by username
-            var user = await _userManager.FindByNameAsync(request.Username);
-            if (user == null)
-            {
-                return null;
-            }
-
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null) return null;
+            
             // 2. Verify the Password
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!isPasswordValid)
-            {
-                return null;
-            }
-
+            if (!isPasswordValid) return null;
+            
             // 3. Get User Roles
             var roles = await _userManager.GetRolesAsync(user);
             var primaryRole = roles.FirstOrDefault() ?? "None";
 
-            // 4. ENFORCE BUSINESS RULES
-            if (primaryRole == "Cashier" && user.BranchId == null)
-            {
-                return null;
-            }
-
+            // 4. check if cashier is assigned to a branch
+            if (primaryRole == "Cashier" && user.BranchId == null) return null;
+           
             // 5. Generate the JWT Token
             var token = GenerateJwtToken(user, roles);
 
@@ -70,8 +61,9 @@ namespace BusinessLogic.Services
 
             var user = new User
             {
-                UserName = request.Username,
+                UserName = request.Email,
                 Name = request.Name,
+                Email = request.Email,
                 // Admin may have no branch assignment
                 BranchId = request.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : request.BranchId
             };
@@ -102,7 +94,8 @@ namespace BusinessLogic.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName)
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.Email, user.Email)
             };
             // Add the BranchId to the token if it exists
             if (user.BranchId.HasValue)
