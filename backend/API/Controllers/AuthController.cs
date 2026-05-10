@@ -1,5 +1,6 @@
 ﻿using Business.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Models.DTOs.Auth;
 
@@ -21,30 +22,45 @@ namespace Presentation.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequest)
         {
             // 1. Call the Business Logic Layer
-            var result = await _authService.LoginAsync(loginRequest);
-
-            // 2. If the service returns null (invalid user/pass/branch rule), return 401
-            if (result == null)
+            try
             {
-                return Unauthorized(new { message = "Invalid username, password, or branch assignment." });
+                var response = await _authService.LoginAsync(loginRequest);
+                return Ok(response);
             }
-
-            // 3. Otherwise, return the DTO with the JWT token
-            return Ok(result);
+            catch (UnauthorizedAccessException ex)
+            {
+                // This catches your "Invalid email or password" message.
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // This catches the "Account configuration error" (missing branch).
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // For database crashes or unexpected bugs.
+                return StatusCode(500, new { message = "An internal error occurred." });
+            }
         }
 
         [HttpPost("register")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> register([FromBody] RegisterRequestDto RegisterRequest)
         {
-            var result = await _authService.RegisterAsync(RegisterRequest);
-
-            if (result == false)
+            try
             {
-                return BadRequest(new { message = "Registration failed. Please check user details or branch assignment." });
+                await _authService.RegisterAsync(RegisterRequest);
+                return Ok(new { message = "User created successfully." });
             }
-
-            return Ok(new { message = "User created successfully." });
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
+            }
         }
 
     }

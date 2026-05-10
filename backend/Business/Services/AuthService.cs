@@ -23,21 +23,30 @@ namespace BusinessLogic.Services
 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            // 1. find the user by username
+            // 1. Find the user by username
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null) return null;
-            
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("Invalid email or password");
+            }
+
             // 2. Verify the Password
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!isPasswordValid) return null;
-            
+            if (!isPasswordValid)
+            {
+                throw new UnauthorizedAccessException("Invalid email or password");
+            }
+
             // 3. Get User Roles
             var roles = await _userManager.GetRolesAsync(user);
             var primaryRole = roles.FirstOrDefault() ?? "None";
 
-            // 4. check if cashier is assigned to a branch
-            if (primaryRole == "Cashier" && user.BranchId == null) return null;
-           
+            // 4. Check if cashier is assigned to a branch
+            if (primaryRole.Equals("Cashier", StringComparison.OrdinalIgnoreCase) && user.BranchId == null)
+            {
+                throw new InvalidOperationException("Account configuration error: No branch assigned.");
+            }
+
             // 5. Generate the JWT Token
             var token = GenerateJwtToken(user, roles);
 
@@ -52,11 +61,18 @@ namespace BusinessLogic.Services
             };
         }
 
-        public async Task<bool> RegisterAsync(RegisterRequestDto request)
+        public async Task RegisterAsync(RegisterRequestDto request)
         {
+            // Explicit Check for Existing Email
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException($"The email address '{request.Email}' is already registered to another staff member.");
+            }
+
             if (request.Role.Equals("Cashier", StringComparison.OrdinalIgnoreCase) && !request.BranchId.HasValue)
             {
-                return false;
+                throw new InvalidOperationException("A Cashier must be assigned to a specific branch.");
             }
 
             var user = new User
@@ -70,20 +86,19 @@ namespace BusinessLogic.Services
 
             // Create the User in the AspNetUsers table
             var result = await _userManager.CreateAsync(user, request.Password);
-
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                var roleResult = await _userManager.AddToRoleAsync(user, request.Role);
-
-                if (!roleResult.Succeeded)
-                {
-                    return false;
-                }
-
-                return true;
+                // Concatenate all Identity errors into one message
+                var errorMessages = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"User creation failed: {errorMessages}");
             }
 
-            return false;
+            // Create the User role in the AspNetUsersRoles table
+            var roleResult = await _userManager.AddToRoleAsync(user, request.Role);
+            if (!roleResult.Succeeded)
+            {
+                throw new Exception($"Role assignment failed for user {user.Email}. Please contact an admin.");
+            }
         }
 
         private string GenerateJwtToken(User user, IList<string> roles)
